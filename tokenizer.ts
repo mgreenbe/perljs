@@ -1,19 +1,23 @@
-export type BinOpLiteral = "+" | "-" | "*" | "/" | "**";
-
 export type NumToken = {
     type: "num", value: number;
 };
 
-export type BinOpToken = {
-    type: "binOp", value: BinOpLiteral;
+export type PrefixOp = "pre+" | "pre-";
+export type PrefixOpToken = {
+    type: "prefixOp", value: PrefixOp;
 };
 
-export type Token = NumToken | BinOpToken;
+export type InfixOp = "+" | "-" | "*" | "/" | "**";
+export type InfixOpToken = {
+    type: "infixOp", value: InfixOp;
+};
+
+export type Token = NumToken | PrefixOpToken | InfixOpToken;
 
 const numTokenizer = {
     name: "numTokenizer",
     re: /^[0-9]+/,
-    process: (s: string): NumToken => {
+    process: (s: string, prevToken: Token | null): NumToken => {
         return { type: "num", value: Number(s) };
     }
 };
@@ -21,9 +25,9 @@ const numTokenizer = {
 const opTokenizer = {
     name: "opTokenizer",
     re: /^\*\*|[-+*/]/,
-    process: (s: string): BinOpToken => {
+    process: (s: string, prevToken: Token | null): PrefixOpToken | InfixOpToken => {
         if (s === "-" || s === "+" || s === "*" || s === "/" || s === "**") {
-            return { type: "binOp", value: s };
+            return { type: "infixOp", value: s };
         } else { throw `Unknown operator ${s}`; };
     }
 };
@@ -48,7 +52,7 @@ export function* tokenGenerator(source: string, debug = false): Generator<Token,
                 success = true;
                 i += result[0].length;
                 i = consumeWhitespace(source, i);
-                token = tokenizer.process(result[0]);
+                token = tokenizer.process(result[0], token);
                 yield token;
                 break;
             }

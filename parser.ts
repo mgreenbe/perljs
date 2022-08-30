@@ -1,6 +1,6 @@
-import { tokenGenerator, BinOpLiteral } from "./tokenizer";
+import { tokenGenerator, InfixOp, PrefixOp } from "./tokenizer";
 
-const precedence: Record<BinOpLiteral, number> = {
+const precedence: Record<InfixOp, number> = {
     "-": 0, "+": 0, "*": 1, "/": 1, "**": 2
 };
 
@@ -9,9 +9,9 @@ const associativity: ("LR" | "RL")[] = ["LR", "LR", "RL"];
 export function parse(source: string, debug = false) {
     const tokenStream = tokenGenerator(source);
     const nums: number[] = [];
-    const ops: BinOpLiteral[] = [];
+    const ops: InfixOp[] = [];
 
-    function shouldReduce(op: BinOpLiteral) {
+    function shouldReduce(op: InfixOp) {
         const prevOp = ops[ops.length - 1];
         const prec = precedence[op];
         if (prevOp == undefined) {
@@ -52,7 +52,10 @@ export function parse(source: string, debug = false) {
                     console.log(`Pushed ${token.value}.`);
                 }
                 break;
-            case "binOp": {
+            case "prefixOp": {
+                break;
+            }
+            case "infixOp": {
                 const op = token.value;
                 while (shouldReduce(op)) {
                     reduce();
@@ -73,7 +76,7 @@ export function parse(source: string, debug = false) {
     return nums[0];
 }
 
-function applyBinOp(op: BinOpLiteral, x: number, y: number) {
+function applyBinOp(op: InfixOp, x: number, y: number) {
     switch (op) {
         case "-":
             return x - y;
@@ -85,5 +88,14 @@ function applyBinOp(op: BinOpLiteral, x: number, y: number) {
             return x * y;
         case "**":
             return x ** y;
+    }
+}
+
+function applyPrefixOp(op: PrefixOp, x: number) {
+    switch (op) {
+        case "pre-":
+            return -x;
+        case "pre+":
+            return x;
     }
 }

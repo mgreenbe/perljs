@@ -21,7 +21,7 @@ test('45 - 23 is tokenized correctly.', () => {
         "value": 45,
     },
     {
-        "type": "binOp",
+        "type": "infixOp",
         "value": "-",
     },
     {
