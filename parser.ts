@@ -52,7 +52,7 @@ export function parse(source: string, debug = false) {
                     console.log(`Pushed ${token.value}.`);
                 }
                 break;
-            case "op": {
+            case "binOp": {
                 const op = token.value;
                 while (shouldReduce(op)) {
                     reduce();
