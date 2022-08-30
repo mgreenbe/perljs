@@ -28,4 +28,6 @@ print (4**3**2, "\n");
 
 print "\n\n";
 
-print 3*-4**2;
+print 3*-4**2, "\n";
+
+print -+-+-3;

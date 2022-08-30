@@ -1,21 +1,29 @@
-import { tokenGenerator, OpLiteral } from "./tokenizer";
+import { tokenGenerator, BinOpLiteral } from "./tokenizer";
 
-const precedence: Record<OpLiteral, number> = {
+const precedence: Record<BinOpLiteral, number> = {
     "-": 0, "+": 0, "*": 1, "/": 1, "**": 2
 };
 
-const associativity: Record<OpLiteral, "left" | "right"> = {
-    "-": "left", "+": "left", "*": "left", "/": "left", "**": "right"
-};
+const associativity: ("LR" | "RL")[] = ["LR", "LR", "RL"];
 
 export function parse(source: string, debug = false) {
     const tokenStream = tokenGenerator(source);
     const nums: number[] = [];
-    const ops: OpLiteral[] = [];
+    const ops: BinOpLiteral[] = [];
 
-    function shouldReduce(op: OpLiteral) {
+    function shouldReduce(op: BinOpLiteral) {
         const prevOp = ops[ops.length - 1];
-        return prevOp !== undefined && precedence[prevOp] >= precedence[op];
+        const prec = precedence[op];
+        if (prevOp == undefined) {
+            return false;
+        } else if (precedence[prevOp] > prec) {
+            return true;
+        } else if (precedence[prevOp] === prec && associativity[prec] === "LR") {
+            return true;
+        } else {
+            return false;
+        }
+        // return prevOp !== undefined && precedence[prevOp] >= precedence[op];
     }
 
     function reduce() {
@@ -28,7 +36,7 @@ export function parse(source: string, debug = false) {
         if (x === undefined || y === undefined) {
             throw "Not enough arguments!";
         }
-        const z = applyOp(op, x, y);
+        const z = applyBinOp(op, x, y);
         nums.push(z);
         if (debug) {
             console.log(`Reduced: ${x} ${op} ${y}.`);
@@ -65,7 +73,7 @@ export function parse(source: string, debug = false) {
     return nums[0];
 }
 
-function applyOp(op: OpLiteral, x: number, y: number) {
+function applyBinOp(op: BinOpLiteral, x: number, y: number) {
     switch (op) {
         case "-":
             return x - y;

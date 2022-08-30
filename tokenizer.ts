@@ -1,12 +1,14 @@
-export type OpLiteral = "+" | "-" | "*" | "/" | "**";
+export type BinOpLiteral = "+" | "-" | "*" | "/" | "**";
 
 export type NumToken = {
     type: "num", value: number;
 };
 
-export type OpToken = {
-    type: "op", value: OpLiteral;
+export type BinOpToken = {
+    type: "op", value: BinOpLiteral;
 };
+
+export type Token = NumToken | BinOpToken;
 
 const numTokenizer = {
     name: "numTokenizer",
@@ -19,14 +21,14 @@ const numTokenizer = {
 const opTokenizer = {
     name: "opTokenizer",
     re: /^\*\*|[-+*/]/,
-    process: (s: string): OpToken => {
+    process: (s: string): BinOpToken => {
         if (s === "-" || s === "+" || s === "*" || s === "/" || s === "**") {
             return { type: "op", value: s };
         } else { throw `Unknown operator ${s}`; };
     }
 };
 
-export function* tokenGenerator(source: string, debug = false) {
+export function* tokenGenerator(source: string, debug = false): Generator<Token, void, unknown> {
     let i = consumeWhitespace(source, 0);
     while (i < source.length) {
         if (debug) {
@@ -45,7 +47,8 @@ export function* tokenGenerator(source: string, debug = false) {
                 success = true;
                 i += result[0].length;
                 i = consumeWhitespace(source, i);
-                yield tokenizer.process(result[0]);
+                const token = tokenizer.process(result[0]);
+                yield token;
                 break;
             }
         }
