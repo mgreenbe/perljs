@@ -1,46 +1,76 @@
-export type NumToken = {
-    type: "num", value: number;
+export type NUM = {
+    type: "NUM", value: number;
 };
-
-export type PrefixOp = "pre+" | "pre-";
-export type PrefixOpToken = {
-    type: "prefixOp", value: PrefixOp;
+export type PLUS = {
+    type: "PLUS";
 };
-
-export type InfixOp = "+" | "-" | "*" | "/" | "**";
-export type InfixOpToken = {
-    type: "infixOp", value: InfixOp;
+export type MINUS = {
+    type: "MINUS";
 };
-
-export type Token = NumToken | PrefixOpToken | InfixOpToken;
+export type TIMES = {
+    type: "TIMES";
+};
+export type DIVIDE = {
+    type: "DIVIDE";
+};
+export type POW = {
+    type: "POW";
+};
+export type LPAREN = {
+    type: "LPAREN";
+};
+export type RPAREN = {
+    type: "RPAREN";
+};
+export type Glyph = PLUS | MINUS | TIMES | DIVIDE | POW | LPAREN | RPAREN;
+export type Token = NUM | Glyph;
 
 const numTokenizer = {
     name: "numTokenizer",
     re: /^[0-9]+/,
-    process: (s: string, prevToken: Token | null): NumToken => {
-        return { type: "num", value: Number(s) };
+    process: (s: string): NUM => {
+        return { type: "NUM", value: Number(s) };
     }
 };
 
-const opTokenizer = {
-    name: "opTokenizer",
-    re: /^\*\*|[-+*/]/,
-    process: (s: string, prevToken: Token | null): PrefixOpToken | InfixOpToken => {
-        if (s === "-" || s === "+" || s === "*" || s === "/" || s === "**") {
-            return { type: "infixOp", value: s };
-        } else { throw `Unknown operator ${s}`; };
+const glyphTokenizer = {
+    name: "glyphTokenizer",
+    re: /^\*\*|[-+*/()]/,
+    process: (s: string): Glyph => {
+        switch (s) {
+            case "+":
+                return { "type": "PLUS" };
+            case "-":
+                return { "type": "MINUS" };
+            case "*":
+                return { "type": "TIMES" };
+            case "/":
+                return { "type": "DIVIDE" };
+            case "**":
+                return { "type": "POW" };
+            case "(":
+                return { "type": "LPAREN" };
+            case ")":
+                return { "type": "RPAREN" };
+            default:
+                throw `Unknown glyph ${s}`;;
+        }
     }
 };
+
+export function tokenize(source: string) {
+    const tokenStream = tokenGenerator(source);
+    return [...tokenStream];
+}
 
 export function* tokenGenerator(source: string, debug = false): Generator<Token, void, unknown> {
     let i = consumeWhitespace(source, 0);
-    let token: Token | null = null;
     while (i < source.length) {
         if (debug) {
             console.log(`i = ${i}`);
         }
         let success = false;
-        for (const tokenizer of [numTokenizer, opTokenizer]) {
+        for (const tokenizer of [numTokenizer, glyphTokenizer]) {
             const result = tokenizer.re.exec(source.slice(i));
             if (result !== null) {
                 if (debug) {
@@ -52,7 +82,7 @@ export function* tokenGenerator(source: string, debug = false): Generator<Token,
                 success = true;
                 i += result[0].length;
                 i = consumeWhitespace(source, i);
-                token = tokenizer.process(result[0], token);
+                const token = tokenizer.process(result[0]);
                 yield token;
                 break;
             }

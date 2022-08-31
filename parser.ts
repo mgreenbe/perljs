@@ -1,101 +1,101 @@
-import { tokenGenerator, InfixOp, PrefixOp } from "./tokenizer";
+import { tokenize, Token } from "./tokenizer";
 
-const precedence: Record<InfixOp, number> = {
-    "-": 0, "+": 0, "*": 1, "/": 1, "**": 2
-};
+class Parser {
+    tokens: Token[];
+    i: number;
 
-const associativity: ("LR" | "RL")[] = ["LR", "LR", "RL"];
-
-export function parse(source: string, debug = false) {
-    const tokenStream = tokenGenerator(source);
-    const nums: number[] = [];
-    const ops: InfixOp[] = [];
-
-    function shouldReduce(op: InfixOp) {
-        const prevOp = ops[ops.length - 1];
-        const prec = precedence[op];
-        if (prevOp == undefined) {
-            return false;
-        } else if (precedence[prevOp] > prec) {
-            return true;
-        } else if (precedence[prevOp] === prec && associativity[prec] === "LR") {
-            return true;
-        } else {
-            return false;
-        }
-        // return prevOp !== undefined && precedence[prevOp] >= precedence[op];
+    constructor(source: string) {
+        this.tokens = tokenize(source);
+        this.i = 0;
     }
 
-    function reduce() {
-        const op = ops.pop();
-        if (op === undefined) {
-            throw "Reduce called with empty op stack!";
+    peek() {
+        const token = this.tokens[this.i];
+        if (token === undefined) {
+            return null;
         }
-        const y = nums.pop();
-        const x = nums.pop();
-        if (x === undefined || y === undefined) {
-            throw "Not enough arguments!";
-        }
-        const z = applyBinOp(op, x, y);
-        nums.push(z);
-        if (debug) {
-            console.log(`Reduced: ${x} ${op} ${y}.`);
-            console.log(`nums = ${nums}, ops = ${ops}`);
-        }
+        return token;
     }
 
-    for (const token of tokenStream) {
-        switch (token.type) {
-            case "num":
-                nums.push(token.value);
-                if (debug) {
-                    console.log(`Pushed ${token.value}.`);
-                }
-                break;
-            case "prefixOp": {
-                break;
-            }
-            case "infixOp": {
-                const op = token.value;
-                while (shouldReduce(op)) {
-                    reduce();
-                }
-                ops.push(op);
-                if (debug) {
-                    console.log(`Pushed ${token.value}.`);
-                    console.log(`nums = ${nums}, ops = ${ops}`);
-                }
-                break;
-            }
+    next() {
+        const token = this.tokens[this.i];
+        if (token === undefined) {
+            return null;
         }
+        this.i++;
+        return token;
     }
-    while (ops.length > 0) {
-        reduce();
+
+    number() {
+        const token = this.peek();
+        if (token === null || token.type !== "NUM") {
+            return null;
+        }
+        this.next();
+        return token.value;
     };
-    console.assert(nums.length === 1);
-    return nums[0];
+
+    _plus_or_minus() {
+        let token = this.peek();
+        if (token !== null && (token.type === "PLUS" || token.type === "MINUS")) {
+            this.next();
+            return token.type;
+        }
+        return null;
+    }
+
+    additive() {
+        let x = this.multiplicative();
+        if (x === null) {
+            return null;
+        }
+        let op: "PLUS" | "MINUS" | null;
+        while (op = this._plus_or_minus()) {
+            const y = this.multiplicative();
+            if (y === null) {
+                throw "Expected a number!";
+            }
+            if (op === "PLUS") {
+                x += y;
+            } else {
+                x -= y;
+            }
+        }
+        return x;
+    }
+
+    _times_or_divide() {
+        let token = this.peek();
+        if (token !== null && (token.type === "TIMES" || token.type === "DIVIDE")) {
+            this.next();
+            return token.type;
+        }
+        return null;
+    }
+
+    multiplicative() {
+        let x = this.number();
+        if (x === null) {
+            return null;
+        }
+        let op: "TIMES" | "DIVIDE" | null;
+        while (op = this._times_or_divide()) {
+            const y = this.number();
+            if (y === null) {
+                throw "Expected a number!";
+            }
+            if (op === "TIMES") {
+                x *= y;
+            } else {
+                x /= y;
+            }
+        }
+        return x;
+    }
+
+
 }
 
-function applyBinOp(op: InfixOp, x: number, y: number) {
-    switch (op) {
-        case "-":
-            return x - y;
-        case "+":
-            return x + y;
-        case "/":
-            return x / y;
-        case "*":
-            return x * y;
-        case "**":
-            return x ** y;
-    }
-}
-
-function applyPrefixOp(op: PrefixOp, x: number) {
-    switch (op) {
-        case "pre-":
-            return -x;
-        case "pre+":
-            return x;
-    }
-}
+const source = "2*6 + 4*2 - 25*4*2/10";
+const parser = new Parser(source);
+console.log(parser.additive());
