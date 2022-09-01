@@ -105,3 +105,4 @@ function consumeWhitespace(source: string, i: number) {
         return i + result[0].length;
     }
 }
+
