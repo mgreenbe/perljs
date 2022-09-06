@@ -82,17 +82,39 @@ export class Parser {
             return t.type === "PLUS" ? x : -x;
         } else {
             try {
-                return this.primary();
+                return this.pow();
             } catch {
                 throw "Expected unary expression!";
             }
 
         }
     }
+
+    pow(): number {
+        const x = this.primary();
+        const xs = [x];
+        while (true) {
+            const t = this.tokens[this.i];
+            if (t?.type === "POW") {
+                this.i++;
+                const y = this.unary(); // sic
+                xs.push(y);
+            } else {
+                break;
+            }
+        }
+        let n = xs.length;
+        let z = xs[n - 1];
+        for (let j = n - 2; j >= 0; j--) {
+            z = xs[j] ** z;
+        }
+        return z;
+    }
 }
 
 // const source = "-+-3*((--5 - 1)*+2 + (2+3)*4)";
 // const source = "3*2--(1+2)";
 // const source = "((((3)))*((4 + 5)) - ((6 - 7)/(8 + 9)))";
-// const parser = new Parser(source);
-// console.log(parser.additive());
+const source = "---2**-2";
+const parser = new Parser(source);
+console.log(parser.additive());
