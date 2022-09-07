@@ -1,3 +1,13 @@
+/*
+equality:       inequality (("==" | "!=") inequality)*
+inequality:     additive (("<" | "<=" | ">" | ">=") additive)*
+additive:       multiplicative (("+" | "-") multiplicative)*
+multiplicative: unary (("*" | "/") unary)*
+unary:          power | (("+" | +-) unary)
+power:          primary ("**" unary)*
+primary:        NUM | ("(" additive ")")
+*/
+
 import { tokenize, Token } from "./tokenizer";
 
 export class Parser {
@@ -19,6 +29,35 @@ export class Parser {
         } else {
             throw "Expected NUM or LPAREN!";
         }
+    }
+
+    equality() {
+        let x = this.additive();
+        let xs = [x];
+        let ops: ("EQ" | "NEQ")[] = [];
+        while (true) {
+            const t = this.tokens[this.i];
+            if (t?.type === "EQ" || t?.type === "NEQ") {
+                this.i++;
+                ops.push(t.type);
+                const y = this.additive();
+                xs.push(y);
+            } else {
+                break;
+            }
+        }
+        if (ops.length === 0) {
+            return x;
+        }
+        for (let j = 0; j < ops.length; j++) {
+            if (ops[j] === "EQ" && xs[j] !== xs[j + 1]) {
+                return 0;
+            }
+            if (ops[j] === "NEQ" && xs[j] === xs[j + 1]) {
+                return 1;
+            }
+        }
+        return 1;
     }
 
     additive() {
@@ -115,6 +154,12 @@ export class Parser {
 // const source = "-+-3*((--5 - 1)*+2 + (2+3)*4)";
 // const source = "3*2--(1+2)";
 // const source = "((((3)))*((4 + 5)) - ((6 - 7)/(8 + 9)))";
-const source = "---2**-2";
+
+// const source = "---2**-2";
+// const parser = new Parser(source);
+// console.log(parser.equality());
+
+const source = "1 == 1 + 0 != 2 ** 1";
 const parser = new Parser(source);
-console.log(parser.additive());
+console.log(parser.equality());
+

@@ -38,29 +38,8 @@ export class LCG {
     }
 }
 
-const rng = new LCG(666);
-
-class Expr {
-    m: number;
-    M: number;
-    seed?: number;
-    rng: LCG;
-
-    constructor(m: number, M: number, seed?: number) {
-        this.m = m;
-        this.M = M;
-        this.seed = seed;
-        this.rng = new LCG(seed);
-    }
-
-    primary() {
-        return this.rng.integer(this.m, this.M);
-    }
-
-
-
-}
-
-let expr = new Expr(-9, 10);
-for (let i = 0; i < 200; i++)
-    console.log(expr.primary());
+let rng = new LCG(666);
+for (let i = 0; i < 20; i++){
+    let x = rng.integer(1, 7)
+    let y = rng.integer(1, 7)
+    console.log(y*x, x)}

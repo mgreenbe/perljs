@@ -25,4 +25,10 @@ describe("Exponentials", () => {
         const parser = new Parser(source);
         expect(parser.additive()).toBeCloseTo(-0.25);
     });
+
+    test("-2**-1**-1**-1**-1**-1", () => {
+        let source = "-2**-1**-1**-1**-1**-1";
+        const parser = new Parser(source);
+        expect(parser.additive()).toBeCloseTo(-0.5);
+    });
 });

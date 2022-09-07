@@ -22,7 +22,13 @@ export type LPAREN = {
 export type RPAREN = {
     type: "RPAREN";
 };
-export type Glyph = PLUS | MINUS | TIMES | DIVIDE | POW | LPAREN | RPAREN;
+export type EQ = {
+    type: "EQ";
+};
+export type NEQ = {
+    type: "NEQ";
+};
+export type Glyph = PLUS | MINUS | TIMES | DIVIDE | POW | LPAREN | RPAREN | EQ | NEQ;
 export type Token = NUM | Glyph;
 
 const numTokenizer = {
@@ -35,7 +41,7 @@ const numTokenizer = {
 
 const glyphTokenizer = {
     name: "glyphTokenizer",
-    re: /^\*\*|[-+*/()]/,
+    re: /^==|!=|\*\*|[-+*/()]/,
     process: (s: string): Glyph => {
         switch (s) {
             case "+":
@@ -52,6 +58,10 @@ const glyphTokenizer = {
                 return { "type": "LPAREN" };
             case ")":
                 return { "type": "RPAREN" };
+            case "==":
+                return { "type": "EQ" };
+            case "!=":
+                return { "type": "NEQ" };
             default:
                 throw `Unknown glyph ${s}`;;
         }
@@ -106,3 +116,7 @@ function consumeWhitespace(source: string, i: number) {
     }
 }
 
+
+// const source = "12 == 34 != 56";
+// const tokenStream = tokenGenerator(source);
+// console.log([...tokenStream])
